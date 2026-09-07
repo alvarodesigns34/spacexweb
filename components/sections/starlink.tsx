@@ -1,4 +1,4 @@
-import { STARLINK, FUENTES } from "@/lib/data";
+import { FUENTES, STARLINK, formatoNumero } from "@/lib/data";
 import { Constelacion } from "@/components/ui/constelacion";
 
 const fuente = FUENTES.find((f) => f.id === STARLINK.fuente)?.url;
@@ -22,8 +22,8 @@ export function Starlink() {
           </p>
 
           <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3 lg:grid-cols-2">
-            <Dato valor={STARLINK.lanzados.toLocaleString("es-ES")} etiqueta="Lanzados en total" />
-            <Dato valor={STARLINK.enOrbita.toLocaleString("es-ES")} etiqueta="Actualmente en órbita" />
+            <Dato valor={formatoNumero(STARLINK.lanzados)} etiqueta="Lanzados en total" />
+            <Dato valor={formatoNumero(STARLINK.enOrbita)} etiqueta="Actualmente en órbita" />
             <Dato valor={`${STARLINK.altitudKm} km`} etiqueta="Altitud de la capa principal" />
             <Dato valor={`${STARLINK.inclinacionDeg}°`} etiqueta="Inclinación orbital" />
           </dl>
@@ -34,9 +34,10 @@ export function Starlink() {
               href={fuente}
               target="_blank"
               rel="noopener noreferrer"
-              className="border-b border-hairline-2 transition-colors duration-[120ms] hover:border-plume hover:text-plume"
+              className="inline-flex min-h-11 items-center border-b border-hairline-2 align-middle
+                         transition-colors duration-[120ms] hover:border-plume hover:text-plume"
             >
-              Fuente ↗
+              Fuente ↗<span className="sr-only"> de las cifras de Starlink, se abre en una pestaña nueva</span>
             </a>
           </p>
         </div>

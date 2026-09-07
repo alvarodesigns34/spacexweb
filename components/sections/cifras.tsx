@@ -105,7 +105,7 @@ function Tarjeta({
           href={urlFuente(c.fuente)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex min-h-9 items-center font-[family-name:var(--font-mono)]
+          className="mt-4 inline-flex min-h-11 items-center font-[family-name:var(--font-mono)]
                      text-[0.6875rem] uppercase tracking-[0.12em] text-ink-faint
                      transition-colors duration-[120ms] hover:text-plume"
         >

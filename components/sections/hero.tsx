@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { OrbitHero, type OrbitDrive } from "@/components/ui/orbit-hero";
+import { formatoNumero } from "@/lib/data";
 import { canAnimate, gsap } from "@/lib/gsap";
 
 /** Parámetro gravitacional estándar de la Tierra, en km³/s². */
@@ -110,7 +111,24 @@ export function Hero() {
           focus={[0.66, 0.4]}
           className="h-full w-full"
         >
-          <div className="shell flex h-full flex-col justify-start pb-14 pt-24 sm:justify-center sm:pb-0 sm:pt-0">
+          {/* Segunda vela, esta en el DOM.
+              La del shader oscurece la imagen en luz lineal, que es lo que
+              mejor se ve, pero cae con la anchura del cuadro y no sabe dónde
+              acaba el texto. Esta se ajusta a la columna de copia y además
+              sigue ahí si WebGL no arranca. No es un cristal decorativo: sin
+              ella, la última línea de la entradilla cruza una nube iluminada y
+              se queda por debajo de 3:1. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: estrecho
+                ? "linear-gradient(to bottom, color-mix(in srgb, var(--color-surface) 88%, transparent) 0%, color-mix(in srgb, var(--color-surface) 62%, transparent) 34%, color-mix(in srgb, var(--color-surface) 14%, transparent) 58%, transparent 72%)"
+                : "linear-gradient(to right, color-mix(in srgb, var(--color-surface) 86%, transparent) 0%, color-mix(in srgb, var(--color-surface) 72%, transparent) 26%, color-mix(in srgb, var(--color-surface) 46%, transparent) 44%, color-mix(in srgb, var(--color-surface) 18%, transparent) 60%, transparent 74%)",
+            }}
+          />
+
+          <div className="shell relative flex h-full flex-col justify-start pb-14 pt-24 sm:justify-center sm:pb-0 sm:pt-0">
             <div className="max-w-[46rem]">
               <p data-hero-entra className="t-eyebrow mb-7 text-ink-muted">
                 Reutilización orbital · 2010 — hoy
@@ -133,7 +151,7 @@ export function Hero() {
               {/* La medida es más corta que en el resto de la página a
                   propósito: el texto tiene que caber dentro de la zona que la
                   vela oscurece. Fuera de ahí compite con una nube iluminada. */}
-              <p data-hero-entra className="t-lead mt-8 max-w-[36ch] text-ink/90">
+              <p data-hero-entra className="t-lead mt-8 max-w-[38ch] text-ink/90">
                 Falcon&nbsp;9 ha completado ese viaje 656 veces. Un solo propulsor, el
                 B1067, lo ha hecho 37. Así se desmontó el supuesto de que un cohete
                 es de un solo uso.
@@ -174,13 +192,17 @@ export function Hero() {
             className="pointer-events-none absolute inset-x-0 bottom-0 hidden lg:block"
           >
             <div className="shell">
-              <dl className="flex items-end gap-10 border-t border-hairline py-5">
-                <Lectura etiqueta="Altitud de cámara" valor={altitud.toLocaleString("es-ES")} unidad="km" />
-                <Lectura etiqueta="Velocidad orbital" valor={v.toFixed(2)} unidad="km/s" />
-                <Lectura etiqueta="Periodo" valor={t.toFixed(1)} unidad="min" />
-                <p className="ml-auto max-w-[24ch] text-right font-[family-name:var(--font-mono)]
-                              text-[0.6875rem] leading-[1.5] tracking-[0.06em] text-ink-muted">
-                  Órbita circular calculada · µ = 398 600,44 km³/s²
+              {/* La nota va pegada a las lecturas y no al borde derecho: ahí
+                  está la mitad iluminada del planeta, donde no hay vela que la
+                  sostenga y el texto pequeño desaparece. */}
+              <dl className="flex flex-wrap items-end gap-x-10 gap-y-3 border-t border-hairline py-5">
+                <Lectura etiqueta="Altitud de cámara" valor={formatoNumero(altitud)} unidad="km" />
+                <Lectura etiqueta="Velocidad orbital" valor={formatoNumero(v, 2)} unidad="km/s" />
+                <Lectura etiqueta="Periodo" valor={formatoNumero(t, 1)} unidad="min" />
+                <p className="max-w-[26ch] font-[family-name:var(--font-mono)] text-[0.6875rem]
+                              leading-[1.45] tracking-[0.04em] text-ink-muted">
+                  Órbita circular calculada
+                  <br />µ = 398 600,44 km³/s²
                 </p>
               </dl>
             </div>

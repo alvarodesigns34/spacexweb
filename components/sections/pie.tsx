@@ -29,7 +29,7 @@ export function Pie() {
                     href={f.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-9 items-center text-[0.875rem] leading-[1.5] text-ink-muted
+                    className="inline-flex min-h-11 items-center text-[0.875rem] leading-[1.5] text-ink-muted
                                transition-colors duration-[120ms] hover:text-plume"
                   >
                     {f.nombre} ↗
@@ -59,7 +59,7 @@ export function Pie() {
           </p>
           <a
             href="#top"
-            className="inline-flex min-h-9 items-center font-[family-name:var(--font-mono)] text-[0.75rem]
+            className="inline-flex min-h-11 items-center font-[family-name:var(--font-mono)] text-[0.75rem]
                        uppercase tracking-[0.14em] text-ink-faint transition-colors duration-[120ms]
                        hover:text-ink"
           >

@@ -14,11 +14,19 @@ import { RETORNO } from "@/lib/data";
 
 const ASCENSO = "M4,0 C9,-26 17,-52 34,-72";
 
+/*
+ * El lazo de arriba no es una licencia: es el encendido de retorno. El
+ * propulsor sigue subiendo y alejándose mientras frena, invierte la marcha
+ * cerca de la cima y baja por dentro de su propia trayectoria de subida. Hay
+ * que dibujarlo ancho —la separación real entre la rama que sube y la que baja
+ * es de pocos kilómetros— o el arco se cierra sobre sí mismo y parece un error
+ * de trazado en vez de una vuelta.
+ */
 const DESCENSO = [
   "M34,-72",                       // separación
-  "C42,-84 50,-92 52,-101",        // el propulsor sigue subiendo mientras frena
-  "C53,-107 46,-105 40,-99",       // cima: aquí se invierte la marcha
-  "C32,-90 26,-58 21,-30",         // caída, manteniéndose a la derecha del ascenso
+  "C46,-80 58,-88 60,-99",         // sigue subiendo y alejándose mientras frena
+  "C62,-110 50,-110 42,-101",      // cima: aquí se invierte la marcha
+  "C34,-88 26,-56 21,-30",         // caída, por dentro de la rama de subida
   "C19,-19 19,-8 19,0",            // aterrizaje en LZ-1
 ].join(" ");
 
@@ -34,61 +42,83 @@ const COTAS = [
  * único sitio de la página donde el scroll no desplaza contenido sino que
  * mueve un mecanismo: por eso se puede permitir el pin.
  */
+/**
+ * La sección se fija y las seis fases del retorno avanzan con el scroll. Es el
+ * único sitio de la página donde el scroll no desplaza contenido sino que
+ * mueve un mecanismo: por eso se puede permitir el pin.
+ *
+ * La cabecera va fuera del panel fijado a propósito. Dentro, en vertical, el
+ * titular y la entradilla se comían la altura que necesita el diagrama y el
+ * dibujo quedaba recortado por debajo del recuadro mientras el scroll seguía
+ * consumido por el pin.
+ */
 export function Retorno() {
   return (
     <section id="retorno" data-retorno className="relative border-t border-hairline bg-surface-2">
-      <div data-retorno-panel className="relative min-h-[100svh] overflow-hidden py-24 md:py-0">
-        <div className="shell flex min-h-[100svh] flex-col justify-center gap-12 py-24 lg:flex-row lg:items-center lg:gap-20">
-          {/* Texto de la fase activa */}
-          <div className="lg:w-[38%] lg:shrink-0">
+      <div className="shell pt-24 md:pt-32">
+        <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
+          <div>
             <p className="t-eyebrow">Perfil de retorno · Falcon 9</p>
-            <h2 className="t-h2 mt-5 max-w-[13ch] text-ink">
-              Ocho minutos de vuelta a casa
-            </h2>
-            <p className="mt-6 max-w-[44ch] text-[0.9375rem] leading-[1.7] text-ink-muted">
-              Desde la separación hasta el apagado sobre la plataforma pasan poco
-              más de ocho minutos. En ese tramo el vehículo se da la vuelta, frena
-              contra la atmósfera y se pilota con cuatro aletas y un solo motor.
-            </p>
-
-            {/* Lista compacta: solo nombre y cota. Las descripciones viven en
-                el hueco de abajo, de altura fija, para que cambiar de fase
-                dentro de una sección fijada no mueva nada de sitio. */}
-            <ol className="mt-9 border-t border-hairline">
-              {RETORNO.map((f, i) => (
-                <li
-                  key={f.indice}
-                  data-fase
-                  data-fase-indice={i}
-                  className="flex items-baseline gap-4 border-b border-hairline py-2.5"
-                >
-                  <span data-fase-num className="t-num w-6 shrink-0 text-[0.75rem] text-ink-faint">
-                    {f.indice}
-                  </span>
-                  <span data-fase-nombre className="flex-1 text-[0.9375rem] text-ink-muted">
-                    {f.nombre}
-                  </span>
-                  <span className="t-num shrink-0 text-[0.75rem] text-ink-faint">{f.altitud}</span>
-                </li>
-              ))}
-            </ol>
-
-            <div data-fase-textos className="relative mt-7 min-h-[7.5rem]">
-              {RETORNO.map((f, i) => (
-                <p
-                  key={f.indice}
-                  data-fase-texto
-                  data-fase-indice={i}
-                  className="max-w-[46ch] text-[0.9375rem] leading-[1.7] text-ink-muted"
-                >
-                  {f.descripcion}
-                </p>
-              ))}
-            </div>
+            <h2 className="t-h2 mt-5 max-w-[13ch] text-ink">Ocho minutos de vuelta a casa</h2>
           </div>
+          <p className="max-w-[40ch] text-[0.9375rem] leading-[1.65] text-ink-muted">
+            Desde la separación hasta el apagado sobre la plataforma pasan poco
+            más de ocho minutos. En ese tramo el vehículo se da la vuelta, frena
+            contra la atmósfera y se pilota con cuatro aletas y un solo motor.
+          </p>
+        </div>
+      </div>
 
-          {/* Diagrama */}
-          <div className="relative min-h-[24rem] flex-1 self-stretch lg:min-h-0">
+      <div
+        data-retorno-panel
+        /* El panel se fija con su borde superior en el del viewport, y ahí
+           está la cabecera fija: sin este relleno, el dibujo pierde sus
+           primeros sesenta píxeles detrás de la barra. En escritorio el
+           contenido va centrado y no hace falta. */
+        className="relative mt-12 flex min-h-[100svh] flex-col-reverse items-stretch gap-8
+                   overflow-hidden px-[clamp(1.5rem,4vw,4rem)] pb-12 pt-20 lg:mt-16
+                   lg:flex-row lg:items-center lg:gap-16 lg:pb-0 lg:pt-0"
+      >
+        {/* Fases */}
+        <div className="lg:w-[38%] lg:shrink-0">
+          {/* Lista compacta: solo nombre y cota. Las descripciones viven en
+              el hueco de abajo, de altura fija, para que cambiar de fase
+              dentro de una sección fijada no mueva nada de sitio. */}
+          <ol className="border-t border-hairline">
+            {RETORNO.map((f, i) => (
+              <li
+                key={f.indice}
+                data-fase
+                data-fase-indice={i}
+                className="flex items-baseline gap-4 border-b border-hairline py-2.5"
+              >
+                <span data-fase-num className="t-num w-6 shrink-0 text-[0.75rem] text-ink-faint">
+                  {f.indice}
+                </span>
+                <span data-fase-nombre className="flex-1 text-[0.9375rem] text-ink-muted">
+                  {f.nombre}
+                </span>
+                <span className="t-num shrink-0 text-[0.75rem] text-ink-faint">{f.altitud}</span>
+              </li>
+            ))}
+          </ol>
+
+          <div data-fase-textos className="relative mt-6 min-h-[8.5rem] sm:min-h-[7rem]">
+            {RETORNO.map((f, i) => (
+              <p
+                key={f.indice}
+                data-fase-texto
+                data-fase-indice={i}
+                className="max-w-[46ch] text-[0.9375rem] leading-[1.7] text-ink-muted"
+              >
+                {f.descripcion}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        {/* Diagrama */}
+        <div className="relative min-h-[34svh] flex-1 lg:min-h-[36rem] lg:self-stretch">
             <svg
               viewBox="-14 -116 118 130"
               preserveAspectRatio="xMidYMid meet"
@@ -194,7 +224,7 @@ export function Retorno() {
                   {/* El penacho solo existe cuando hay un encendido. */}
                   <path
                     data-retorno-llama
-                    d="M-1.9 4 L1.9 4 L0 16.5 Z"
+                    d="M-1.9 4 L1.9 4 L0 15 Z"
                     fill="var(--color-plume)"
                     opacity={0}
                   />
@@ -204,8 +234,7 @@ export function Retorno() {
                   <path d="M1.1 -3 L2.9 -2.2 L2.9 -0.4 L1.1 -1.2 Z" fill="var(--color-ink)" />
                 </g>
               </g>
-            </svg>
-          </div>
+          </svg>
         </div>
       </div>
     </section>

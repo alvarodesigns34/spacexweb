@@ -55,8 +55,16 @@
 }
 
 /* ==========================================================================
-   Base
+   Base y componentes
+
+   Las clases de tipografía y retícula van dentro de `@layer components` a
+   propósito. Tailwind coloca sus utilidades en `@layer utilities`, que se
+   declara después, así que una clase sin capa —como estaba `.t-lead`— gana a
+   cualquier `max-w-[38ch]` que se le ponga al lado y el ajuste no hace nada.
+   Dentro de la capa, la utilidad manda, que es lo que uno espera al escribirla.
    ========================================================================== */
+
+@layer base {
 
 * { min-width: 0; }
 
@@ -93,11 +101,15 @@ body {
   border-radius: var(--radius-hair);
 }
 
+}
+
 /* ==========================================================================
    Tipografía
    Regla que lo gobierna: cuanto más grande el texto, más apretado el tracking
    y más corto el interlineado.
    ========================================================================== */
+
+@layer components {
 
 .t-display {
   font-family: var(--font-display);
@@ -176,6 +188,8 @@ body {
 }
 
 .rule { border-top: 1px solid var(--color-hairline); }
+
+}
 
 /* ==========================================================================
    Movimiento: el estado visible es el del CSS.
@@ -278,3 +292,20 @@ html[data-coreografia] [data-flota-silueta] {
 html[data-coreografia] [data-flota-silueta][data-flota-activo] { opacity: 1; }
 
 html[data-coreografia] [data-flota-nombre][data-flota-activo] { color: var(--color-ink); }
+
+/* --- Flota: qué versión se muestra ---------------------------------------- */
+
+/* La versión en horizontal solo aparece cuando la coreografía ha llegado a
+   crear el recorrido —pantalla ancha y movimiento permitido—, porque es lo
+   único que da acceso a los tres vehículos que quedan fuera del recuadro. En
+   cualquier otro caso (móvil, movimiento reducido, JavaScript caído) manda la
+   versión apilada, que los muestra los cuatro. */
+
+/* El atributo del bloque y el que la coreografía pone en <html> tienen que
+   llamarse distinto. Con el mismo nombre, `[data-flota-horizontal]{display:none}`
+   también casa con el propio <html> —que lo lleva— y la página entera
+   desaparece: el documento se queda con la altura exacta del viewport y ni una
+   sección con altura. */
+[data-flota-horizontal] { display: none; }
+html[data-flota-modo="horizontal"] [data-flota-horizontal] { display: block; }
+html[data-flota-modo="horizontal"] [data-flota-apilada] { display: none; }

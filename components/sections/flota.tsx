@@ -33,9 +33,13 @@ export function Flota() {
       </div>
 
       {/* ---------------------------------------------------------------- */}
-      {/* Escritorio: escala fija + fichas en horizontal                    */}
+      {/* Escala fija + fichas en horizontal.                              */}
+      {/* Solo se muestra si la coreografía llega a crear el recorrido: sin */}
+      {/* él, tres de los cuatro vehículos quedarían fuera del recuadro y   */}
+      {/* sin ninguna forma de alcanzarlos. Lo decide el CSS a partir del   */}
+      {/* atributo que pone la propia coreografía.                         */}
       {/* ---------------------------------------------------------------- */}
-      <div data-flota-wrap className="relative mt-16 hidden md:block">
+      <div data-flota-wrap data-flota-horizontal className="relative mt-16">
         <div className="flex h-[100svh] min-h-[42rem] items-stretch">
           {/* Columna de escala. No se mueve. */}
           <div className="relative w-[42vw] shrink-0 pl-[clamp(1.5rem,4vw,4rem)]">
@@ -122,7 +126,10 @@ export function Flota() {
                     {v.descripcion}
                   </p>
 
-                  <dl data-flota-txt className="mt-8 grid grid-cols-2 gap-x-10">
+                  {/* Dos columnas solo cuando la ficha es de verdad ancha:
+                      a 1100 px mide 638 px y partirla deja los valores
+                      rompiendo en mitad del número. */}
+                  <dl data-flota-txt className="mt-8 grid grid-cols-1 gap-x-12 xl:grid-cols-2">
                     {v.especificaciones.map((e) => (
                       <div
                         key={e.clave}
@@ -146,18 +153,23 @@ export function Flota() {
       </div>
 
       {/* ---------------------------------------------------------------- */}
-      {/* Móvil: apilado, sin pin                                          */}
+      {/* Versión apilada: móvil, movimiento reducido y sin JavaScript.    */}
       {/* ---------------------------------------------------------------- */}
-      <div className="shell mt-14 space-y-16 md:hidden">
+      <div data-flota-apilada className="shell mt-14 space-y-14 md:mt-20 md:space-y-20">
         {FLOTA.map((v) => (
-          <article key={v.id} data-reveal className="border-t border-hairline pt-8">
-            <div className="flex items-end gap-6">
-              {/* Regla compartida también aquí: el alto del hueco es fijo y la
-                  silueta ocupa la fracción que le corresponde. */}
-              <div className="relative h-[13rem] w-24 shrink-0">
+          <article
+            key={v.id}
+            data-reveal
+            className="max-w-[52rem] border-t border-hairline pt-8"
+          >
+            <div className="flex items-end gap-6 sm:gap-10">
+              {/* La regla es la misma aquí: el hueco tiene altura fija y cada
+                  silueta ocupa la fracción que le toca, así que los cuatro se
+                  pueden comparar aunque estén uno debajo de otro. */}
+              <div className="relative h-[12rem] w-20 shrink-0 pb-6 sm:h-[17rem] sm:w-28">
                 <div
-                  className="absolute inset-x-0 bottom-0"
-                  style={{ height: `${(v.alturaM / ESCALA_M) * 100}%` }}
+                  className="absolute inset-x-0 bottom-6"
+                  style={{ height: `calc(${(v.alturaM / ESCALA_M) * 100}% - 1.5rem)` }}
                 >
                   <Silueta
                     id={v.id}
@@ -165,19 +177,26 @@ export function Flota() {
                     medioAnchoM={Math.max(v.anchoM, 9) / 1.5}
                   />
                 </div>
-                <span className="absolute inset-x-0 bottom-0 h-px bg-hairline-2" />
+                <span className="absolute inset-x-0 bottom-6 h-px bg-hairline-2" />
+                <span className="t-num absolute bottom-0 left-0 text-[0.625rem] text-ink-faint">
+                  {v.alturaM} m
+                </span>
               </div>
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 pb-6">
                 <p className="t-eyebrow">{v.clase}</p>
-                <h3 className="t-h2 mt-3 text-[2rem] text-ink">{v.nombre}</h3>
+                <h3 className="t-h2 mt-3 text-[clamp(1.875rem,7vw,2.75rem)] text-ink">
+                  {v.nombre}
+                </h3>
                 <p className="t-num mt-2 text-[0.75rem] text-plume">{v.estado}</p>
               </div>
             </div>
 
-            <p className="mt-6 text-[0.9375rem] leading-[1.7] text-ink-muted">{v.descripcion}</p>
+            <p className="mt-6 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-ink-muted">
+              {v.descripcion}
+            </p>
 
-            <dl className="mt-6">
+            <dl className="mt-7 sm:grid sm:grid-cols-2 sm:gap-x-12">
               {v.especificaciones.map((e) => (
                 <div
                   key={e.clave}

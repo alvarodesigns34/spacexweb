@@ -3,7 +3,7 @@
 import { useLayoutEffect } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { splitWords } from "@/lib/gsap";
-import { RETORNO, formatoNumero } from "@/lib/data";
+import { formatoNumero } from "@/lib/data";
 
 /* --------------------------------------------------------------------------
    Toda la coreografía de scroll, en un sitio y en orden de página
@@ -118,15 +118,25 @@ export function Choreography() {
       }
     });
 
-    /* --- 5 · Flota: recorrido horizontal, solo en pantallas anchas -------- */
-    mm.add("(prefers-reduced-motion: no-preference) and (min-width: 768px)", () => {
+    /* --- 5 · Flota: recorrido horizontal, solo en pantallas anchas --------
+       El umbral es 1100 px y no el punto `md` de Tailwind: por debajo, la
+       columna de la escala se come casi la mitad del ancho y la ficha se queda
+       en 440 px, donde «≈ 5 300 t» ya parte en dos líneas. Ahí la versión
+       apilada se lee mejor que un recorrido horizontal apretado. */
+    mm.add("(prefers-reduced-motion: no-preference) and (min-width: 1100px)", () => {
+      /* Se marca antes de medir nada: hasta este momento el bloque está en
+         `display: none` y todas sus medidas serían cero. Leer `scrollWidth`
+         después fuerza el recálculo, así que los valores ya son los buenos. */
+      document.documentElement.dataset.flotaModo = "horizontal";
+      const quitarMarca = () => { delete document.documentElement.dataset.flotaModo; };
+
       const track = document.querySelector<HTMLElement>("[data-flota-track]");
       const wrap = document.querySelector<HTMLElement>("[data-flota-wrap]");
       const progreso = document.querySelector<HTMLElement>("[data-flota-progreso]");
-      if (!track || !wrap) return;
+      if (!track || !wrap) return quitarMarca;
 
       const pista = track.parentElement;
-      if (!pista) return;
+      if (!pista) return quitarMarca;
 
       /* El recorrido se mide contra el ancho de la pista, no contra el de la
          ventana: la columna de la escala ocupa casi la mitad y usar
@@ -196,6 +206,8 @@ export function Choreography() {
               : { trigger: panel, containerAnimation: horizontal, start: "left 72%", once: true },
         });
       });
+
+      return quitarMarca;
     });
 
     /* --- 6 · Retorno: el mecanismo ligado al scroll ----------------------- */
@@ -216,9 +228,68 @@ export function Choreography() {
       traza.style.strokeDasharray = `${largo}`;
       traza.style.strokeDashoffset = `${largo}`;
 
-      /* Los tramos con motores encendidos: retorno, reentrada y aterrizaje.
-         El penacho solo se ve en esos tres, que es cuando existe. */
-      const ENCENDIDOS: [number, number][] = [[0.10, 0.26], [0.44, 0.60], [0.86, 0.99]];
+      /* --- Dónde empieza cada fase, medido en la propia curva --------------
+         Repartir las seis fases en seis tramos iguales de longitud de arco no
+         funciona: el lazo del encendido de retorno se come una parte enorme
+         del recorrido a altitud casi constante, así que la lista iba por la
+         cuarta fase mientras el propulsor seguía en la cima. Las fronteras se
+         buscan por altitud, que es lo que la lista dice.
+
+         La curva está dibujada en kilómetros con la altitud en negativo, así
+         que basta muestrearla y localizar dónde cruza cada cota. */
+      const MUESTRAS = 400;
+      const alturas: number[] = [];
+      for (let i = 0; i <= MUESTRAS; i++) {
+        alturas.push(-traza.getPointAtLength((i / MUESTRAS) * largo).y);
+      }
+      const cima = alturas.indexOf(Math.max(...alturas));
+
+      /** Fracción de recorrido en la que la curva baja de `km`, tras la cima. */
+      const alBajar = (km: number) => {
+        for (let i = cima; i <= MUESTRAS; i++) if (alturas[i] <= km) return i / MUESTRAS;
+        return 1;
+      };
+      /** Fracción en la que la curva sube por encima de `km`, antes de la cima. */
+      const alSubir = (km: number) => {
+        for (let i = 0; i <= cima; i++) if (alturas[i] >= km) return i / MUESTRAS;
+        return 0;
+      };
+
+      const INICIO_FASE = [
+        0,             // 01 separación
+        alSubir(74),   // 02 encendido de retorno
+        alBajar(46),   // 03 encendido de reentrada
+        alBajar(21),   // 04 guiado con aletas
+        alBajar(1.2),  // 05 encendido de aterrizaje
+        alBajar(0.12), // 06 contacto
+      ];
+
+      /* Fases con motores encendidos: retorno, reentrada y aterrizaje. En las
+         otras tres el propulsor cae, y el penacho no debe verse. */
+      const CON_MOTOR = new Set([1, 2, 4]);
+
+      /**
+       * Scroll → posición en la curva.
+       *
+       * No es la identidad, y esa es la clave de la escena. El lazo del
+       * encendido de retorno se lleva más de la mitad de la longitud del
+       * trazo, mientras que los últimos veinte kilómetros —donde caben tres
+       * de las seis fases— son un tramo cortísimo. Ligar el scroll
+       * directamente al recorrido hacía que el guiado con aletas y el
+       * encendido de aterrizaje pasaran en un fotograma.
+       *
+       * Cada fase recibe la misma porción de scroll y se estira o se comprime
+       * sobre el trozo de curva que le corresponde. El propulsor sigue estando
+       * a la altitud que dice la lista, y el lector tiene tiempo de leerla.
+       */
+      const BORDES = [...INICIO_FASE, 1];
+      const nFases = INICIO_FASE.length;
+
+      function recorridoDesdeScroll(s: number) {
+        const t = Math.min(0.999999, Math.max(0, s)) * nFases;
+        const i = Math.floor(t);
+        return BORDES[i] + (BORDES[i + 1] - BORDES[i]) * (t - i);
+      }
 
       /** Coloca el propulsor en el punto `p` del recorrido y lo orienta. */
       function situar(p: number) {
@@ -232,18 +303,24 @@ export function Choreography() {
         const ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
 
         movil!.setAttribute("transform", `translate(${pt.x} ${pt.y})`);
+
+        /* El penacho se acorta al acercarse al suelo. Sin esto, en el
+           encendido de aterrizaje la llama atraviesa la plataforma y sale por
+           debajo del diagrama. */
+        if (llama) {
+          const alturaKm = -pt.y;
+          const k = Math.min(1, Math.max(0.12, alturaKm / 9));
+          llama.setAttribute("transform", `scale(1 ${k.toFixed(3)})`);
+        }
         /* El cohete apunta a lo largo de su eje Y. Durante el descenso vuela
            de culo: el morro mira hacia atrás en la trayectoria. */
         giro!.setAttribute("transform", `rotate(${ang - 90})`);
 
-        if (llama) {
-          const on = ENCENDIDOS.some(([a2, b2]) => p >= a2 && p <= b2);
-          llama.style.opacity = on ? "0.9" : "0";
-        }
       }
 
       const estado = { p: 0 };
       situar(0);
+      if (llama) llama.style.opacity = "0";
       fases[0].dataset.faseActiva = "si";
       if (textos[0]) textos[0].dataset.faseActiva = "si";
       activa = 0;
@@ -263,13 +340,17 @@ export function Choreography() {
         p: 1,
         ease: "none",
         onUpdate: () => {
-          traza!.style.strokeDashoffset = `${largo * (1 - estado.p)}`;
-          situar(estado.p);
+          const recorrido = recorridoDesdeScroll(estado.p);
+          traza!.style.strokeDashoffset = `${largo * (1 - recorrido)}`;
+          situar(recorrido);
 
           /* Fase activa por atributo; el estilo lo pone CSS. */
-          const idx = Math.min(RETORNO.length - 1, Math.floor(estado.p * RETORNO.length));
+          const idx = Math.min(nFases - 1, Math.floor(estado.p * nFases));
           if (idx === activa) return;
           activa = idx;
+
+          if (llama) llama.style.opacity = CON_MOTOR.has(idx) ? "0.92" : "0";
+
           fases.forEach((f, i) => {
             if (i === idx) f.dataset.faseActiva = "si";
             else delete f.dataset.faseActiva;

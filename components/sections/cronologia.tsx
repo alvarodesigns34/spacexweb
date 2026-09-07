@@ -15,7 +15,9 @@ export function Cronologia() {
           </p>
         </div>
 
-        <ol data-cronologia className="relative mt-16 md:mt-20">
+        {/* La lista se acota: con las reglas cruzando los 1 160 px completos y
+            el texto acabando a 660, la sección se lee vacía por la derecha. */}
+        <ol data-cronologia className="relative mt-16 max-w-[62rem] md:mt-20">
           {/* Raíl: la línea de fondo está siempre; la de encima la dibuja el
               scroll. Sin JS se ve la de fondo y la lista se lee igual. */}
           <span
@@ -47,9 +49,9 @@ export function Cronologia() {
               <div className="sm:pl-10">
                 <span
                   aria-hidden="true"
-                  className="absolute left-[-3px] top-[2.35rem] hidden size-[7px] rounded-full border
-                             border-hairline-2 bg-surface-2 sm:left-[calc(7.5rem-3px)] sm:block
-                             md:left-[calc(9.5rem-3px)]"
+                  className="absolute left-[-4px] top-[2.3rem] hidden size-[9px] rounded-full border
+                             border-ink-faint bg-surface-2 sm:left-[calc(7.5rem-4px)] sm:block
+                             md:left-[calc(9.5rem-4px)]"
                 />
                 <h3 className="t-h3 text-ink">{h.titulo}</h3>
                 <p className="mt-3 max-w-[62ch] text-[0.9375rem] leading-[1.7] text-ink-muted">

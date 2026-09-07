@@ -552,15 +552,15 @@ export function OrbitHero({
   fov = 46,
   spin = 2.1,
   spinSpeed = 0.35,
-  steps = 16,
-  lightSteps = 6,
+  steps = 14,
+  lightSteps = 5,
   sunIntensity = 1,
   starBrightness = 0.05,
   glow = 1,
   exposure = 4.4,
   vignette = 0.3,
-  resolution = 0.72,
-  maxDpr = 1.75,
+  resolution = 0.66,
+  maxDpr = 1.6,
   focus = [0.66, 0.46],
   scrim = "left",
   scrimStrength = 0.86,
@@ -724,6 +724,31 @@ export function OrbitHero({
 
     /** Fotogramas ya fundidos en la media desde el último descarte. */
     let settled = 0;
+
+    /* --- Calidad adaptativa ------------------------------------------------
+       El coste de este shader es el producto de tres cosas —píxeles, pasos por
+       rayo y muestras hacia el Sol— y cuál de ellas cabe depende por completo
+       de la máquina. Un portátil con gráfica integrada hace la décima parte de
+       trabajo por segundo que una dedicada, y el mismo ajuste que va a 60 fps
+       en una va a 6 en la otra.
+
+       Así que no se adivina: se mide. Tras las primeras decenas de fotogramas
+       se compara el tiempo medio con el presupuesto y, si no llega, se baja un
+       escalón. Nunca se sube: recuperar calidad al aflojar la carga produce un
+       vaivén de nitidez mucho más molesto que quedarse en el escalón bajo. */
+    const PRESUPUESTO_MS = 22;      // ~45 fps
+    const MUESTRA_MIN = 24;         // fotogramas antes de decidir
+    const ESCALONES_MAX = 2;
+    let escalon = 0;
+    let acumMs = 0;
+    let acumN = 0;
+
+    /** Factor de resolución y descuento de pasos según el escalón actual. */
+    const calidad = () => ({
+      escala: [1, 0.8, 0.62][escalon],
+      pasos: [0, 3, 5][escalon],
+      luz: [0, 1, 2][escalon],
+    });
     /** Estado de cámara del fotograma anterior: si cambia, la media no vale. */
     let lastKey = "";
 
@@ -763,7 +788,9 @@ export function OrbitHero({
       const dpr = software ? 1 : Math.min(window.devicePixelRatio || 1, Math.max(1, cfg.current.maxDpr));
       const cssW = Math.max(1, Math.round(rect.width));
       const cssH = Math.max(1, Math.round(rect.height));
-      const scale = software ? 0.34 : Math.min(1, Math.max(0.4, cfg.current.resolution));
+      const scale = software
+        ? 0.34
+        : Math.min(1, Math.max(0.32, cfg.current.resolution * calidad().escala));
       const w = Math.max(2, Math.round(cssW * dpr));
       const h = Math.max(2, Math.round(cssH * dpr));
       const sw = Math.max(2, Math.round(w * scale));
@@ -789,6 +816,8 @@ export function OrbitHero({
     let running = true;
     let visible = true;
     let raf = 0;
+    /** Última posición de scroll dibujada. Solo se usa en modo software. */
+    let ultimoProgreso = -1;
 
     function pass(prog: Prog, target: Target | null) {
       gl!.useProgram(prog.program);
@@ -825,7 +854,10 @@ export function OrbitHero({
       /* El horizonte visible desde esa altura: el ángulo desde el nadir al que
          el rayo sale tangente al planeta. Es lo que ancla el encuadre. */
       const horizonDeg = Math.asin(1 / d) / RAD;
-      const pitchDeg = Math.max(4, Math.min(178, horizonDeg + C.horizonOffset));
+      /* Y la vista se levanta un poco a medida que sube: sin eso, subir 2 000
+         km deja el mismo trozo de superficie llenando el cuadro y el ascenso
+         se lee como un acercamiento en vez de como un alejamiento. */
+      const pitchDeg = Math.max(4, Math.min(178, horizonDeg + C.horizonOffset + 4.5 * p));
       const fovDeg = C.fov;
 
       /* Cámara sobre el eje +Z, inclinada `pitchDeg` grados desde la vertical. */
@@ -873,8 +905,15 @@ export function OrbitHero({
       gl!.uniform3f(u.uSun!, sunX / sl, sunY / sl, sunZ / sl);
       gl!.uniform1f(u.uSunI!, Math.max(0, C.sunIntensity));
       gl!.uniform1f(u.uSpin!, spinNow);
-      gl!.uniform1f(u.uViewSteps!, software ? 8 : Math.max(6, Math.min(24, Math.round(C.steps))));
-      gl!.uniform1f(u.uLightSteps!, software ? 3 : Math.max(2, Math.min(10, Math.round(C.lightSteps))));
+      const q = calidad();
+      gl!.uniform1f(
+        u.uViewSteps!,
+        software ? 8 : Math.max(6, Math.min(24, Math.round(C.steps) - q.pasos))
+      );
+      gl!.uniform1f(
+        u.uLightSteps!,
+        software ? 3 : Math.max(2, Math.min(10, Math.round(C.lightSteps) - q.luz))
+      );
       gl!.uniform1f(u.uStars!, Math.max(0, C.starBrightness));
       gl!.uniform1f(u.uEncode!, hdr ? 0 : 1);
       const hs = HALTON[settled % HALTON.length];
@@ -956,10 +995,39 @@ export function OrbitHero({
       if (!running) return;
       raf = requestAnimationFrame(tick);
       if (!visible) { lastFrame = now; return; }
-      const dt = lastFrame ? Math.min(0.05, (now - lastFrame) / 1000) : 0;
+      const dtMs = lastFrame ? now - lastFrame : 0;
+      const dt = Math.min(0.05, dtMs / 1000);
       lastFrame = now;
       if (!cfg.current.paused && !reduced) clock += dt;
+
+      /* En renderizado por software cada fotograma cuesta décimas de segundo.
+         Ahí no se anima: se dibuja cuando algo cambia —el scroll mueve la
+         cámara— y el resto del tiempo se deja la imagen quieta. Una imagen
+         fija limpia se ve mejor que una animación a diez fotogramas. */
+      if (software) {
+        const p = cfg.current.drive?.current?.progress ?? 0;
+        if (Math.abs(p - ultimoProgreso) < 0.002 && settled > 6) return;
+        ultimoProgreso = p;
+      }
+
       render(clock);
+
+      /* Se descartan los primeros fotogramas: incluyen la compilación de
+         shaders y la subida de texturas, y no dicen nada del coste real. */
+      if (!software && escalon < ESCALONES_MAX && dtMs > 0 && settled > 8) {
+        acumMs += dtMs;
+        acumN++;
+        if (acumN >= MUESTRA_MIN) {
+          if (acumMs / acumN > PRESUPUESTO_MS) {
+            escalon++;
+            /* La resolución cambia, así que hay que rehacer los destinos. */
+            width = height = sceneW = sceneH = 0;
+            resize();
+          }
+          acumMs = 0;
+          acumN = 0;
+        }
+      }
     }
 
     if (!build()) { giveUp("build-failed"); return; }
