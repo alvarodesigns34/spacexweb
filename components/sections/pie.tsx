@@ -43,7 +43,9 @@ export function Pie() {
             <h2 className="t-eyebrow">Datos</h2>
             <p className="mt-6 text-[0.875rem] leading-[1.65] text-ink-muted">
               Cifras acumuladas a{" "}
-              <time dateTime={CORTE.iso} className="t-num text-ink">
+              {/* Sin monoespaciada: aquí la fecha es prosa, no telemetría, y
+                  mezclada dentro de una frase rompe el ritmo de la línea. */}
+              <time dateTime={CORTE.iso} className="font-medium text-ink">
                 {CORTE.texto}
               </time>
               . En un programa que lanza cada pocos días, un número sin fecha deja de

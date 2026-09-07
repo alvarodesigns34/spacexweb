@@ -176,9 +176,20 @@ export function Choreography() {
           refreshPriority: 2,
           /* Encaje por ficha. Sin él, la mayor parte del recorrido se pasa
              entre dos vehículos y casi nunca se ve una ficha entera; con él,
-             cada uno tiene su momento quieto. El retardo evita que pelee con
-             un desplazamiento aún en curso. */
-          snap: { snapTo: 1 / total, duration: 0.35, delay: 0.06, ease: "power2.inOut" },
+             cada uno tiene su momento quieto.
+             `directional` e `inertia` van desactivados a propósito: con los
+             valores por defecto, ScrollTrigger encaja en el sentido del último
+             desplazamiento y con un salto largo se va al extremo de la
+             sección, saltándose dos vehículos. Sin ellos encaja siempre en el
+             más cercano, que es lo que la mano espera. */
+          snap: {
+            snapTo: 1 / total,
+            duration: { min: 0.2, max: 0.5 },
+            delay: 0.08,
+            ease: "power2.inOut",
+            directional: false,
+            inertia: false,
+          },
           onUpdate: (self) => {
             if (progreso) progreso.style.width = (self.progress * 100).toFixed(2) + "%";
             marcarActivo(Math.round(self.progress * total));
