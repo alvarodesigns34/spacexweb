@@ -66,7 +66,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${archivo.variable} ${plexSans.variable} ${plexMono.variable}`}>
       <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        {/* Los <link> escritos a mano no heredan basePath: a diferencia de
+            next/image o el objeto `metadata`, esto es HTML literal. Hay que
+            anteponer el prefijo del repo o el icono cae en 404 en Pages. */}
+        <link rel="icon" href="/spacexweb/icon.svg" type="image/svg+xml" />
       </head>
       <body>{children}</body>
     </html>
