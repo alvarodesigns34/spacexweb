@@ -80,10 +80,22 @@ export function Constelacion({ className = "" }: { className?: string }) {
       const ro = R * R_ORBITA;      // radio de la órbita en píxeles
 
       /* La Tierra: disco opaco, para que los satélites de detrás queden
-         tapados de verdad y no flotando por encima. */
+         tapados de verdad y no flotando por encima.
+
+         Con un relleno plano el disco se confunde con el fondo y la
+         constelación se lee como un anillo flotando en el vacío. Un gradiente
+         desplazado hacia la misma dirección de la que viene la luz basta para
+         que se vea una esfera: no hace falta iluminarla de verdad. */
+      const cara = ctx!.createRadialGradient(
+        cx - rt * 0.38, cy - rt * 0.34, rt * 0.05,
+        cx, cy, rt
+      );
+      cara.addColorStop(0, "#16243c");
+      cara.addColorStop(0.55, "#0c1220");
+      cara.addColorStop(1, "#06080d");
       ctx!.beginPath();
       ctx!.arc(cx, cy, rt, 0, Math.PI * 2);
-      ctx!.fillStyle = "#070a10";
+      ctx!.fillStyle = cara;
       ctx!.fill();
       ctx!.strokeStyle = "rgba(111,168,255,0.38)";
       ctx!.lineWidth = 1;

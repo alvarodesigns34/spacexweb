@@ -50,8 +50,8 @@ export function SiteHeader() {
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-10
-                   focus:rounded-hair focus:bg-plume focus:px-4 focus:py-2 focus:text-sm
-                   focus:font-medium focus:text-surface"
+                   focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-hair
+                   focus:bg-plume focus:px-5 focus:text-sm focus:font-medium focus:text-surface"
       >
         Saltar al contenido
       </a>
@@ -60,8 +60,8 @@ export function SiteHeader() {
                       data-[compacta]:py-3">
         <a
           href="#top"
-          className="font-[family-name:var(--font-display)] text-[1.0625rem] font-bold uppercase
-                     leading-none tracking-[0.24em] text-ink"
+          className="-my-3.5 py-3.5 font-[family-name:var(--font-display)] text-[1.0625rem] font-bold
+                     uppercase leading-none tracking-[0.24em] text-ink"
           style={{ fontVariationSettings: '"wdth" 118' }}
         >
           Space<span className="text-plume">X</span>
@@ -73,14 +73,17 @@ export function SiteHeader() {
               <li key={e.href}>
                 <a
                   href={e.href}
-                  className="group relative font-[family-name:var(--font-mono)] text-[0.8125rem]
-                             uppercase tracking-[0.14em] text-ink-muted transition-colors
-                             duration-[120ms] hover:text-ink"
+                  /* El relleno da el área tocable de 44 px que el texto por sí
+                     solo no alcanza; el margen negativo evita que eso
+                     ensanche la barra. */
+                  className="group relative -my-3 block py-3 font-[family-name:var(--font-mono)]
+                             text-[0.8125rem] uppercase tracking-[0.14em] text-ink-muted
+                             transition-colors duration-[120ms] hover:text-ink"
                 >
                   {e.texto}
                   <span
                     aria-hidden="true"
-                    className="absolute -bottom-1.5 left-0 h-px w-0 bg-plume transition-[width]
+                    className="absolute bottom-[0.6rem] left-0 h-px w-0 bg-plume transition-[width]
                                duration-[280ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:w-full"
                   />
                 </a>
