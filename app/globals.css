@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   SpaceX — sistema visual
+   Decisiones, no defaults. Cada valor de aquí responde al sujeto:
+   un vehículo que sale de la atmósfera y vuelve entero.
+
+   Superficie  : el negro azulado del lado nocturno de la Tierra, no #000.
+   Acento      : el ámbar del penacho de RP-1/LOX. Aparece pocas veces.
+   Azul        : reservado al dato físico (limbo atmosférico, órbitas).
+                 No es decoración: es el único sitio donde el azul es real.
+   ========================================================================== */
+
+@theme {
+  /* --- Superficies ------------------------------------------------------- */
+  --color-surface:      #06080c;
+  --color-surface-2:    #0b0e14;
+  --color-surface-3:    #11151d;
+
+  /* --- Tinta (neutros con temperatura fría: 2-6% de croma azul) ---------- */
+  --color-ink:          #eef1f6;
+  --color-ink-muted:    #8b94a6;  /* 6.58:1 sobre surface */
+  --color-ink-faint:    #737d92;  /* 4.85:1 sobre surface */
+
+  /* --- Línea ------------------------------------------------------------- */
+  --color-hairline:     rgba(180, 196, 224, 0.11);
+  --color-hairline-2:   rgba(180, 196, 224, 0.2);
+
+  /* --- Acento único: penacho ---------------------------------------------- */
+  --color-plume:        #ff5a1f;  /* 6.43:1 sobre surface */
+  --color-plume-quiet:  rgba(255, 90, 31, 0.12);
+
+  /* --- Dato físico -------------------------------------------------------- */
+  --color-limb:         #6fa8ff;  /* limbo atmosférico y órbitas Starlink */
+
+  /* --- Tipografía --------------------------------------------------------- */
+  --font-display: var(--font-archivo), "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    var(--font-plex-sans), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  /* --- Radios: tres en uso, no uno para todo ------------------------------ */
+  --radius-hair: 2px;
+  --radius-card: 6px;
+  --radius-slab: 14px;
+
+  /* --- Movimiento --------------------------------------------------------- */
+  --dur-instant: 120ms;
+  --dur-fast:    180ms;
+  --dur-base:    280ms;
+  --dur-slow:    480ms;
+
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std:  cubic-bezier(0.2, 0, 0, 1);
+  --ease-in:   cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+* { min-width: 0; }
+
+html {
+  background-color: var(--color-surface);
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* El scroll suave nativo lo gestiona el navegador; ScrollTrigger no lo necesita
+   y con `scroll-behavior: smooth` los anclajes pelean con el pin. Solo en el
+   salto por anclaje, y nunca si el usuario ha pedido menos movimiento. */
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within { scroll-behavior: smooth; }
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+::selection { background: var(--color-plume); color: #06080c; }
+
+/* Anillo de foco visible en todo lo que se puede enfocar. Nunca outline:none. */
+:focus-visible {
+  outline: 2px solid var(--color-plume);
+  outline-offset: 3px;
+  border-radius: var(--radius-hair);
+}
+
+/* ==========================================================================
+   Tipografía
+   Regla que lo gobierna: cuanto más grande el texto, más apretado el tracking
+   y más corto el interlineado.
+   ========================================================================== */
+
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3rem, 7.4vw, 7.25rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  font-variation-settings: "wdth" 112;
+}
+
+.t-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  font-variation-settings: "wdth" 108;
+}
+
+.t-h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+}
+
+.t-lead {
+  font-size: clamp(1.0625rem, 1.35vw, 1.25rem);
+  line-height: 1.6;
+  color: var(--color-ink-muted);
+  max-width: 62ch;
+}
+
+.t-body { max-width: 68ch; }
+
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+/* Cualquier número que cambie o que se alinee en columna. Sin esto, tiembla. */
+.t-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Cifras grandes. En monoespaciada la coma y el punto ocupan un ancho entero,
+   así que «98,06» sale partido en dos por un hueco. La de display las junta y
+   además aguanta el tracking negativo que pide un número de siete cifras. */
+.t-figure {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-variation-settings: "wdth" 104;
+  letter-spacing: -0.035em;
+}
+
+/* ==========================================================================
+   Retícula y ritmo
+   ========================================================================== */
+
+.shell {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: clamp(1.5rem, 4vw, 4rem);
+}
+
+.rule { border-top: 1px solid var(--color-hairline); }
+
+/* ==========================================================================
+   Movimiento: el estado visible es el del CSS.
+   JS aplica el estado inicial oculto SOLO si va a animarlo (data-anim="on"
+   lo pone el propio JS). Si el JS falla o el usuario pide menos movimiento,
+   el texto se ve igual.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Estados que conduce la coreografía
+
+   El marcado no sabe de animación; solo lleva atributos `data-*`. Estas
+   reglas son el único sitio donde esos atributos se convierten en estilo, y
+   todas describen el estado visible por defecto primero. Si el JS no llega,
+   se ve el estado por defecto y la página se lee entera.
+   ========================================================================== */
+
+/* --- Titular partido en palabras ----------------------------------------- */
+
+.word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  /* El descendente de una «g» se corta contra el borde de la máscara si no se
+     le deja sitio; el margen negativo devuelve la línea a su altura real. */
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.word-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* --- Fases del retorno ---------------------------------------------------- */
+
+[data-fase] {
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
+}
+
+[data-fase][data-fase-activa] {
+  border-bottom-color: var(--color-plume);
+}
+
+[data-fase] [data-fase-num],
+[data-fase] [data-fase-nombre] {
+  transition: color var(--dur-base) var(--ease-out);
+}
+
+[data-fase][data-fase-activa] [data-fase-num] { color: var(--color-plume); }
+[data-fase][data-fase-activa] [data-fase-nombre] { color: var(--color-ink); }
+
+/* Las descripciones se apilan en el mismo hueco: cambiar de fase no mueve
+   nada. Sin JS se ve la primera y las demás quedan debajo, legibles al
+   seleccionar el texto y presentes para los buscadores. */
+[data-fase-textos] > [data-fase-texto] { position: relative; }
+
+html[data-coreografia] [data-fase-textos] > [data-fase-texto] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+html[data-coreografia] [data-fase-textos] > [data-fase-texto][data-fase-activa] {
+  opacity: 1;
+}
+
+/* --- Enlaces de texto ----------------------------------------------------- */
+
+a { color: inherit; }
+
+/* Sin esto, un `pin` de ScrollTrigger puede provocar un desbordamiento
+   horizontal de un píxel en algunos navegadores al medir la barra de scroll. */
+.pin-spacer { max-width: 100%; }
+
+/* --- Flota: vehículo activo ----------------------------------------------- */
+
+/* Por defecto los cuatro se ven al mismo nivel: sin JS la comparación de
+   alturas, que es el argumento de la sección, sigue en pie. La coreografía
+   solo baja los tres que no están en la ficha visible. */
+html[data-coreografia] [data-flota-silueta] {
+  opacity: 0.26;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+html[data-coreografia] [data-flota-silueta][data-flota-activo] { opacity: 1; }
+
+html[data-coreografia] [data-flota-nombre][data-flota-activo] { color: var(--color-ink); }
